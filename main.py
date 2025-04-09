@@ -4,6 +4,7 @@ from database import engine
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from auth import auth_routher
+from admin import admin_router
 
 Base.metadata.create_all(bind=engine)
 conn = psycopg2.connect(
@@ -20,4 +21,4 @@ cursor = conn.cursor()
 app = FastAPI()
 
 app.include_router(auth_routher)
-
+app.include_router(admin_router)
