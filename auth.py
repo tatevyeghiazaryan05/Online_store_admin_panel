@@ -6,6 +6,7 @@ from schemas import AdminLoginSchema, AdminPasswordRecover
 from pydantic import EmailStr
 from email_service import send_verification_email
 import os
+from datetime import datetime, timedelta
 
 auth_routher = APIRouter()
 
@@ -99,13 +100,13 @@ def send_password_change_code_to_email(email: EmailStr):
 @auth_routher.post("/api/admin/password/recovery/by/email")
 def password_recovery(recover_data: AdminPasswordRecover):
     code = recover_data.code
+
     new_password = pwd_context.hash(recover_data.new_password)
 
     try:
         main.cursor.execute("SELECT * FROM changepasswordcodes WHERE code=%s",
                         (code,))
         data = main.cursor.fetchone()
-        data = dict(data)
 
     except Exception:
         raise HTTPException(
@@ -116,8 +117,19 @@ def password_recovery(recover_data: AdminPasswordRecover):
     if not data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="code is incorrect!"
+            detail="Code is incorrect!"
 
+        )
+
+    data = dict(data)
+    created_at = data.get("created_at")
+    expiration_time = created_at + timedelta(minutes=15)
+    if datetime.now() > expiration_time:
+        main.cursor.execute("DELETE FROM changepasswordcodes WHERE code=%s", (code,))
+        main.conn.commit()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Code has expired after 15 minutes."
         )
 
     main.cursor.execute("UPDATE admins SET password =%s WHERE email=%s",
@@ -131,4 +143,3 @@ def password_recovery(recover_data: AdminPasswordRecover):
     return "Recovered successfully!!"
 
 
-#TODO code must has 15 minuts exparation time date  and if code date ends it must delete afto
