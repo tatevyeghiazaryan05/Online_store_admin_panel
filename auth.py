@@ -2,14 +2,16 @@ import main
 from fastapi import APIRouter, HTTPException, status, Form, UploadFile, File
 from security import pwd_context, create_access_token
 import shutil
-from schemas import AdminLoginSchema
+from schemas import AdminLoginSchema, AdminPasswordRecover
+from pydantic import EmailStr
+from email_service import send_verification_email
 
 auth_routher = APIRouter()
 
 Upload_Dir = "images"
 
 
-@auth_routher.post("/api/admin/auth/sign-up")
+@auth_routher.post("/api/admin/auth/sign-up")#TODO
 def admin_signup(
         name: str = Form(...),
         email: str = Form(...),
@@ -58,3 +60,67 @@ def admin_login(login_data: AdminLoginSchema):
         admin_email_db = admin.get("email")
         return create_access_token({"id": admin_id_db,
                                     "email": admin_email_db})
+
+
+@auth_routher.get("/api/admin/password/change/code/{email}")
+def send_password_change_code_to_email(email: EmailStr):
+    try:
+        main.cursor.execute("SELECT * FROM admins WHERE email=%s",
+                            (email,))
+        user = main.cursor.fetchone()
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="server error"
+        )
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="not such user!"
+
+        )
+
+    verification_code = send_verification_email(email)
+    main.cursor.execute("INSERT INTO changepasswordcodes (code,email) VALUES(%s,%s)",
+                        (verification_code, email))
+
+    main.conn.commit()
+
+
+@auth_routher.post("/api/admin/password/recovery/by/email")
+def password_recovery(recover_data: AdminPasswordRecover):
+    code = recover_data.code
+    new_password = pwd_context.hash(recover_data.new_password)
+
+    try:
+        main.cursor.execute("SELECT * FROM changepasswordcodes WHERE code=%s",
+                        (code,))
+        data = main.cursor.fetchone()
+        data = dict(data)
+
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="server error"
+        )
+
+    if not data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="code is incorrect!"
+
+        )
+
+    main.cursor.execute("UPDATE admins SET password =%s WHERE email=%s",
+                        (new_password, data["email"]))
+
+    main.conn.commit()
+
+    main.cursor.execute("DELETE FROM changepasswordcodes WHERE code = %s",
+                        (code,))
+    main.conn.commit()
+    return "Recovered successfully!!"
+
+
+#TODO code must has 15 minuts exparation time date  and if code date ends it must delete afto
