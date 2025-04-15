@@ -107,7 +107,7 @@ def change_drinks(drink_id: int, change_data: DrinkCategoryChangeSchema, token=D
     return "Drink category updated successfully!!"
 
 
-@admin_router.put("/api/drinks/change/drink_kind/by/drink_id/{drink_id}")
+@admin_router.put("/api/drinks/change/drink_image/by/drink_id/{drink_id}")
 def change_drinks(drink_id: int, file: UploadFile = File(...), token=Depends(get_current_admin)):
 
     if file:

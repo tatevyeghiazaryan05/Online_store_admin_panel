@@ -1,6 +1,8 @@
 import smtplib
 import random
 from email.message import EmailMessage
+import secrets
+import string
 
 
 # SMTP Configuration
@@ -12,9 +14,10 @@ EMAIL_PASSWORD = "klcm ecsh nfcb xhzs"
 verification_codes = {}
 
 
-def generate_verification_code():
-    """Generate a random 6-digit verification code"""
-    return str(random.randint(100000, 999999))
+def generate_verification_code(length=8):
+
+    characters = string.ascii_letters + string.digits
+    return ''.join(secrets.choice(characters) for _ in range(length))
 
 
 def send_verification_email(user_email):
