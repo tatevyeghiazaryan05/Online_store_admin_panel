@@ -7,7 +7,7 @@ from pydantic import EmailStr
 from email_service import send_verification_email
 import os
 from datetime import datetime, timedelta
-from fastapi.responses import  FileResponse
+from fastapi.responses import FileResponse
 
 auth_routher = APIRouter()
 
@@ -171,5 +171,8 @@ def get_images(admin_id: int):
     return FileResponse(path=image_path, media_type="image/jpeg", filename=image_name)
 
 
-#TODO GIVE IMAGES API, Code has to be uniq
+#TODO GIVE IMAGES API  +
+
+#TODO Code has to be uniq
+
 #todo crete postman collections

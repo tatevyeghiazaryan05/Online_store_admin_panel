@@ -5,6 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException, status, Form, File, Uploa
 from schemas import DrinkSchema, DrinkNameChangeSchema, DrinkImageChangeSchema, DrinkKindChangeSchema, DrinkPriceChangeSchema, DrinkCategoryChangeSchema
 from security import pwd_context, get_current_admin
 from fastapi.responses import FileResponse
+from datetime import datetime, timedelta
+import shutil
+
 
 admin_router = APIRouter()
 
@@ -22,17 +25,22 @@ def drink_add(name: str = Form(...),
               file: UploadFile = File(None),
               token=Depends(get_current_admin)
               ):
-
+    upload_dir = "drink_images"
+    if not os.path.exists(upload_dir):
+        os.makedirs(upload_dir)
 
     if file:
-        upload_dir = "drink_images"
-        os.makedirs(upload_dir, exist_ok=True)
-        file_path = os.path.join(upload_dir, file.filename)
+        l = file.filename.split(".")
 
-        with open(file_path, "wb") as buffer:
-            buffer.write(file.file.read())
+        image_name = l[0] + " " + str(datetime.now()).replace(":", "") + "." + l[-1]
+        file_path = f"{upload_dir}/{image_name}"
 
-        image_name = file.filename
+        try:
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+
+        except PermissionError:
+            raise HTTPException(status_code=500, detail="File write error")
 
     else:
         image_name = "drinks.jpg"
@@ -139,5 +147,5 @@ def get_images(drink_id: int):
 
     return FileResponse(path=image_path, media_type="image/jpeg", filename=image_name)
 
-#TODO DRINK IMAGE HAS TO BE UNIQE,
+#TODO DRINK IMAGE HAS TO BE UNIQE +
 
