@@ -7,6 +7,7 @@ from pydantic import EmailStr
 from email_service import send_verification_email
 import os
 from datetime import datetime, timedelta
+from fastapi.responses import  FileResponse
 
 auth_routher = APIRouter()
 
@@ -28,24 +29,27 @@ def admin_signup(
     if main.cursor.fetchone():
         raise HTTPException(status_code=400, detail="Email already registered.")
 
-    image_name = "default.jpg"
-
     if file:
-        file_path = f"{Upload_Dir}/{file.filename}"
+        l = file.filename.split(".")
+
+        image_name = l[0] + " " + str(datetime.now()).replace(":", "") + "." + l[-1]
+        file_path = f"{Upload_Dir}/{image_name}"
 
         try:
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
-            image_name = file.filename
+
         except PermissionError:
             raise HTTPException(status_code=500, detail="File write error")
+    else:
+        image_name = "default.jpg"
 
-        hashed_password = pwd_context.hash(password)
+    hashed_password = pwd_context.hash(password)
 
-        main.cursor.execute("INSERT INTO admins (name, email, password, image_name) VALUES (%s,%s,%s,%s)",
-                            (name, email, hashed_password, image_name))
-        main.conn.commit()
-        return "Sign Up Successfully!!"
+    main.cursor.execute("INSERT INTO admins (name, email, password, image_name) VALUES (%s,%s,%s,%s)",
+                        (name, email, hashed_password, image_name))
+    main.conn.commit()
+    return "Sign Up Successfully!!"
 
 
 @auth_routher.post("/api/admin/auth/login")
@@ -59,7 +63,7 @@ def admin_login(login_data: AdminLoginSchema):
     admin = dict(admin)
     admin_password_db = admin.get("password")
 
-    if not pwd_context.verify(password,admin_password_db):
+    if not pwd_context.verify(password, admin_password_db):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="password is not correct!!"
@@ -143,3 +147,29 @@ def password_recovery(recover_data: AdminPasswordRecover):
     return "Recovered successfully!!"
 
 
+@auth_routher.get("/api/admin/get/all/images")
+def get_images():
+    main.cursor.execute("SELECT image_name FROM admins")
+    image_names = main.cursor.fetchall()
+    return image_names
+
+
+@auth_routher.get("/api/admin/get/image/by/id/{admin_id}")
+def get_images(admin_id: int):
+    main.cursor.execute("SELECT image_name FROM admins WHERE id=%s",
+                        (admin_id,))
+    result = main.cursor.fetchone()
+    if result is None:
+        return "Admin not found "
+
+    image_name = result['image_name']
+    image_path = os.path.join("images", image_name)
+
+    if not os.path.exists(image_path):
+        return {"error": "Image file not found. "}
+
+    return FileResponse(path=image_path, media_type="image/jpeg", filename=image_name)
+
+
+#TODO GIVE IMAGES API, Code has to be uniq
+#todo crete postman collections

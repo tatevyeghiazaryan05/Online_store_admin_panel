@@ -22,7 +22,7 @@ def drink_add(name: str = Form(...),
               file: UploadFile = File(None),
               token=Depends(get_current_admin)
               ):
-    image_name = "http://127.0.0.1:8000/api/images/get_image/drinks.jpg"
+
 
     if file:
         upload_dir = "drink_images"
@@ -32,7 +32,10 @@ def drink_add(name: str = Form(...),
         with open(file_path, "wb") as buffer:
             buffer.write(file.file.read())
 
-        image_url = f"http://127.0.0.1:8000/api/images/get_image/{file.filename}"
+        image_name = file.filename
+
+    else:
+        image_name = "drinks.jpg"
 
     main.cursor.execute(
         """INSERT INTO drinks (name, kind, price, image, category) VALUES (%s, %s, %s, %s, %s)""",
@@ -45,11 +48,27 @@ def drink_add(name: str = Form(...),
 
 @admin_router.delete("/api/drinks/delete/by-id/{drink_id}")
 def delete_drink(drink_id: int, token=Depends(get_current_admin)):
-    main.cursor.execute("SELECT image FROM drinks WHERE id = %s", (drink_id,))
-    deleted_image = main.cursor.fetchone()
-   #todo
+    main.cursor.execute("SELECT * FROM drinks WHERE id = %s",
+                        (drink_id,))
+    drink = main.cursor.fetchone()
+    drink = dict(drink)
+    image_name = drink.get("image")
+    print(f"image_name is :{image_name}")
+    main.cursor.execute("DELETE FROM drinks WHERE id = %s",
+                        (drink_id,))
     main.conn.commit()
-    return "Deleted successfully!! "
+
+    if image_name == "drinks.jpg":
+        return
+
+    file_path = f"drink_images/{image_name}"
+    print(f"file_path:{file_path}")
+
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        print("File deleted successfully.")
+    else:
+        print("File does not exist.")
 
 
 @admin_router.put("/api/drinks/change/drink_name/by/drink_id/{drink_id}")
@@ -96,4 +115,6 @@ def change_drinks(drink_id: int, file: UploadFile = File(...), token=Depends(get
         main.conn.commit()
         return "Drink image updated successfully!!"
 
+
+#TODO DRINK IMAGE HAS TO BE UNIQE,
 
