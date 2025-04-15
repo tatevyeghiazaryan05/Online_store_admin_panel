@@ -116,5 +116,28 @@ def change_drinks(drink_id: int, file: UploadFile = File(...), token=Depends(get
         return "Drink image updated successfully!!"
 
 
+@admin_router.get("/api/drinks/get/all/images")
+def get_images():
+    main.cursor.execute("SELECT image FROM drinks")
+    image_names = main.cursor.fetchall()
+    return image_names
+
+
+@admin_router.get("/api/drinks/get/image/by/id/{drink_id}")
+def get_images(drink_id: int):
+    main.cursor.execute("SELECT image FROM drinks WHERE id=%s",
+                        (drink_id,))
+    result = main.cursor.fetchone()
+    if result is None:
+        return "Drink not found "
+
+    image_name = result['image']
+    image_path = os.path.join("drink_images", image_name)
+
+    if not os.path.exists(image_path):
+        return {"error": "Image file not found. "}
+
+    return FileResponse(path=image_path, media_type="image/jpeg", filename=image_name)
+
 #TODO DRINK IMAGE HAS TO BE UNIQE,
 
