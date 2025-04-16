@@ -147,13 +147,6 @@ def password_recovery(recover_data: AdminPasswordRecover):
     return "Recovered successfully!!"
 
 
-@auth_routher.get("/api/admin/get/all/images")
-def get_images():
-    main.cursor.execute("SELECT image_name FROM admins")
-    image_names = main.cursor.fetchall()
-    return image_names
-
-
 @auth_routher.get("/api/admin/get/image/by/id/{admin_id}")
 def get_images(admin_id: int):
     main.cursor.execute("SELECT image_name FROM admins WHERE id=%s",
@@ -166,12 +159,15 @@ def get_images(admin_id: int):
     image_path = os.path.join("images", image_name)
 
     if not os.path.exists(image_path):
-        return {"error": "Image file not found. "}
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
 
     return FileResponse(path=image_path, media_type="image/jpeg", filename=image_name)
 
 
-#TODO GIVE IMAGES API  +
+#TODO GIVE IMAGES API +
 
 #TODO Code has to be uniq+
 

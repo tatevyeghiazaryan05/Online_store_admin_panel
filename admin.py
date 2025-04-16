@@ -124,13 +124,6 @@ def change_drinks(drink_id: int, file: UploadFile = File(...), token=Depends(get
         return "Drink image updated successfully!!"
 
 
-@admin_router.get("/api/drinks/get/all/images")
-def get_images():
-    main.cursor.execute("SELECT image FROM drinks")
-    image_names = main.cursor.fetchall()
-    return image_names
-
-
 @admin_router.get("/api/drinks/get/image/by/id/{drink_id}")
 def get_images(drink_id: int):
     main.cursor.execute("SELECT image FROM drinks WHERE id=%s",
@@ -143,7 +136,10 @@ def get_images(drink_id: int):
     image_path = os.path.join("drink_images", image_name)
 
     if not os.path.exists(image_path):
-        return {"error": "Image file not found. "}
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Image file not found"
+        )
 
     return FileResponse(path=image_path, media_type="image/jpeg", filename=image_name)
 
