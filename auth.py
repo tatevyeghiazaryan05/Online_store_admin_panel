@@ -165,10 +165,3 @@ def get_images(admin_id: int):
         )
 
     return FileResponse(path=image_path, media_type="image/jpeg", filename=image_name)
-
-
-#TODO GIVE IMAGES API +
-
-#TODO Code has to be uniq+
-
-#todo crete postman collections +

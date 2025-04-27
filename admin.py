@@ -2,10 +2,10 @@ import os
 
 import main
 from fastapi import APIRouter, Depends, HTTPException, status, Form, File, UploadFile
-from schemas import DrinkSchema, DrinkNameChangeSchema, DrinkImageChangeSchema, DrinkKindChangeSchema, DrinkPriceChangeSchema, DrinkCategoryChangeSchema
+from schemas import DrinkSchema, DrinkNameChangeSchema, DrinkImageChangeSchema, DrinkKindChangeSchema, DrinkPriceChangeSchema, DrinkCategoryChangeSchema, GetFeedbacksSchema
 from security import pwd_context, get_current_admin
 from fastapi.responses import FileResponse
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import shutil
 
 
@@ -143,5 +143,22 @@ def get_images(drink_id: int):
 
     return FileResponse(path=image_path, media_type="image/jpeg", filename=image_name)
 
-#TODO DRINK IMAGE HAS TO BE UNIQE +
+
+@admin_router.get("/admins/api/get/feedback/{start_date}/{end_date}", status_code=200)
+def get_feedback(start_date: date, end_date: date):
+    main.cursor.execute("SELECT * FROM feedback WHERE created_at >= %s AND created_at <= %s",
+                        (start_date, end_date))
+    feedbacks = main.cursor.fetchall()
+    return feedbacks
+
+
+@admin_router.put("/api/admins/update-status/{order_id}")
+def update_order_status(order_id: int, status: str):
+    main.cursor.execute(
+        "UPDATE orders SET status = %s, updated_at = now() WHERE id = %s",
+        (status, order_id)
+    )
+    main.conn.commit()
+
+    return f"Order {order_id} updated to {status}"
 

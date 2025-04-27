@@ -1,4 +1,6 @@
 from pydantic import BaseModel, EmailStr
+from typing import Optional
+import datetime
 
 
 class AdminLoginSchema(BaseModel):
@@ -37,3 +39,8 @@ class DrinkImageChangeSchema(BaseModel):
 class AdminPasswordRecover(BaseModel):
     code: int
     new_password: str
+
+
+class GetFeedbacksSchema(BaseModel):
+    start_date: datetime.date
+    end_date: datetime.date

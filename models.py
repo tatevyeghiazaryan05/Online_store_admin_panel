@@ -39,3 +39,5 @@ class ChangePasswordCode(Base):
     code = Column(Integer, nullable=False)
     email = Column(String, nullable=False)
     created_at = Column(TIMESTAMP, nullable=False, server_default=text("now()"))
+
+
