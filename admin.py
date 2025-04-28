@@ -152,13 +152,26 @@ def get_feedback(start_date: date, end_date: date):
     return feedbacks
 
 
-@admin_router.put("/api/admins/update-status/{order_id}")
-def update_order_status(order_id: int, status: str):
-    main.cursor.execute(
-        "UPDATE orders SET status = %s, updated_at = now() WHERE id = %s",
-        (status, order_id)
-    )
-    main.conn.commit()
+@admin_router.get("/api/admin/get/orders/by/id/{order_id}")
+def get_orders(order_id: int):
+    main.cursor.execute("SELECT * FROM orders WHERE id=%s",
+                        (order_id,))
 
-    return f"Order {order_id} updated to {status}"
 
+@admin_router.get("/api/admin/get/orders/by/date/{start_date}/{end_date}")
+def get_order_by_date(start_date: datetime.date, end_date: datetime.date):
+
+    main.cursor.execute("SELECT * FROM orders WHERE created_at >= %s AND created_at <= %s",
+                        (start_date, end_date))
+    orders = main.cursor.fetchall()
+
+    return orders
+
+
+@admin_router.get("/api/admin/get/orders/by/price/{min_price}/{max_price}")
+def get_order_by_date(min_price: float,  max_price: float):
+    main.cursor.execute("SELECT * FROM orders WHERE total_price >= %s AND total_price <= %s",
+                        (min_price, max_price))
+    orders = main.cursor.fetchall()
+
+    return orders
