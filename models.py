@@ -1,5 +1,5 @@
 from database import Base
-from sqlalchemy import Column, Integer, String, TIMESTAMP, Float, text
+from sqlalchemy import Column, Integer, String, TIMESTAMP, Float, text, Boolean
 
 
 class Admins(Base):
@@ -38,6 +38,15 @@ class ChangePasswordCode(Base):
     id = Column(Integer, nullable=False, primary_key=True)
     code = Column(Integer, nullable=False)
     email = Column(String, nullable=False)
+    created_at = Column(TIMESTAMP, nullable=False, server_default=text("now()"))
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, nullable=False, primary_key=True)
+    message = Column(String, nullable=False)
+    is_read = Column(Boolean, nullable=False, default=False)
     created_at = Column(TIMESTAMP, nullable=False, server_default=text("now()"))
 
 

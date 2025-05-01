@@ -159,7 +159,7 @@ def get_orders(order_id: int):
 
 
 @admin_router.get("/api/admin/get/orders/by/date/{start_date}/{end_date}")
-def get_order_by_date(start_date: datetime.date, end_date: datetime.date):
+def get_order_by_date(start_date: date, end_date: date):
 
     main.cursor.execute("SELECT * FROM orders WHERE created_at >= %s AND created_at <= %s",
                         (start_date, end_date))
@@ -175,3 +175,37 @@ def get_order_by_date(min_price: float,  max_price: float):
     orders = main.cursor.fetchall()
 
     return orders
+
+
+@admin_router.get("/api/admin/notifications")
+def get_admin_notifications():
+    main.cursor.execute("SELECT id, message, created_at FROM notifications WHERE is_read = %s",
+                        (False, ))
+    return main.cursor.fetchall()
+
+
+@admin_router.post("/api/admin/notifications/mark-read/{notification_id}")
+def mark_notification_as_read(notification_id: int):
+    main.cursor.execute("UPDATE notifications SET is_read = TRUE WHERE id = %s",
+                        (notification_id,))
+    main.conn.commit()
+    return {"message": "Notification marked as read"}
+
+
+@admin_router.delete("/api/admin/notifications/delete/by/id/{notification_id}")
+def delete_notification(notification_id: int, token=Depends(get_current_admin)):
+    try:
+        main.cursor.execute("DELETE FROM notifications WHERE id=%s",
+                        (notification_id,))
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="That id notification not found "
+        )
+    try:
+        main.conn.commit()
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+    return "Notification Deleted"
