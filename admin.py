@@ -192,20 +192,15 @@ def mark_notification_as_read(notification_id: int):
     return {"message": "Notification marked as read"}
 
 
-@admin_router.delete("/api/admin/notifications/delete/by/id/{notification_id}")
+@admin_router.delete("/api/admin/notifications/delete/by/id/{notification_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_notification(notification_id: int, token=Depends(get_current_admin)):
     try:
         main.cursor.execute("DELETE FROM notifications WHERE id=%s",
                         (notification_id,))
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="That id notification not found "
-        )
-    try:
+
         main.conn.commit()
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-    return "Notification Deleted"
+
